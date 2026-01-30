@@ -52,7 +52,8 @@ Run a step response simulation:
   --dt 0.001 \
   --kp 0.02 \
   --ki 0.05 \
-  --kd 0.0
+  --kd 0.0 \
+  --deadzone 0.0
 ```
 
 Artifacts are written to `--out` (default: `runs`). A run directory looks like:
@@ -88,6 +89,7 @@ Flags:
 - `--target` target velocity in RPM (default: `1000`)
 - `--duration` simulation duration in seconds (default: `10`)
 - `--dt` simulation timestep in seconds (default: `0.001`)
+- `--deadzone` add a deadzone to the system (default: `0.0`)
 - `--out` base output directory (default: `runs`)
 
 ## Simulation model (current)
@@ -100,11 +102,15 @@ The current simulation is a first-order DC motor speed plant:
 
 This is a baseline model used to validate the experiment harness and controller behavior.
 
+Non idealities that can be simulated
+
+- deadzone adding a threshold that won't lead to changes
+
 ### Known limitations
 
 Real systems have effects not yet modeled here (intentionally staged):
 
-- static friction / deadzone (small PWM does nothing)
+- static friction
 - load torque disturbances (terrain, slope, payload)
 - supply sag (battery voltage drop under load)
 - encoder quantization and noise
@@ -138,7 +144,7 @@ runs/                   Generated run artifacts (gitignored)
 ## Roadmap
 
 Near-term:
-- Add simulation non-idealities (deadzone, disturbances, sensor quantization)
+- Add simulation non-idealities (disturbances, sensor quantization)
 - Batch runs / parameter sweeps
 - Baseline autotune (constrained search over gains using metrics)
 

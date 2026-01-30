@@ -18,24 +18,24 @@ func TestOvershootPercent(t *testing.T) {
 		samples []experiment.Sample
 	}{
 		{
-			name:   "10% overshoot",
-			target: 100.0,
-			max:    110.0,
-			want:   10.0,
+			name:    "10% overshoot",
+			target:  100.0,
+			max:     110.0,
+			want:    10.0,
 			samples: makeSamples(100.0, []float64{0, 50, 100, 110, 105, 100}, 0.1),
 		},
 		{
-			name:   "no overshoot",
-			target: 100.0,
-			max:    95.0,
-			want:   0.0,
+			name:    "no overshoot",
+			target:  100.0,
+			max:     95.0,
+			want:    0.0,
 			samples: makeSamples(100.0, []float64{0, 50, 95, 100}, 0.1),
 		},
 		{
-			name:   "zero target",
-			target: 0.0,
-			max:    10.0,
-			want:   0.0, // overshoot is 0 when target is 0
+			name:    "zero target",
+			target:  0.0,
+			max:     10.0,
+			want:    0.0, // overshoot is 0 when target is 0
 			samples: makeSamples(0.0, []float64{0, 5, 10, 0}, 0.1),
 		},
 	}
