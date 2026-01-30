@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/fabriziobonavita/motor-control-lab/internal/control/pid"
+	"github.com/fabriziobonavita/motor-control-lab/internal/experiment/modifier"
 	"github.com/fabriziobonavita/motor-control-lab/internal/system"
 )
 
@@ -12,6 +13,7 @@ type StepConfig struct {
 	TargetRPM float64
 	DT        float64
 	Duration  float64
+	Modifier  modifier.Modifier
 }
 
 // Sample is a single time step of recorded run data.
@@ -53,6 +55,10 @@ func RunStep(sys system.System, ctrl *pid.Controller, cfg StepConfig) ([]Sample,
 		var tr pid.Trace
 		u := ctrl.Step(cfg.TargetRPM, actual, cfg.DT, &tr)
 
+		if cfg.Modifier != nil {
+			u = cfg.Modifier.Modify(u)
+		}
+
 		sys.Actuate(u)
 		sys.Step(cfg.DT)
 
@@ -62,7 +68,7 @@ func RunStep(sys system.System, ctrl *pid.Controller, cfg StepConfig) ([]Sample,
 			Target:     tr.Target,
 			Actual:     tr.Actual,
 			Error:      tr.Error,
-			U:          tr.Out,
+			U:          u,
 			P:          tr.P,
 			I:          tr.I,
 			D:          tr.D,

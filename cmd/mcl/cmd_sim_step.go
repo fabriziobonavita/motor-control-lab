@@ -10,6 +10,7 @@ import (
 	"github.com/fabriziobonavita/motor-control-lab/internal/artifacts"
 	"github.com/fabriziobonavita/motor-control-lab/internal/control/pid"
 	"github.com/fabriziobonavita/motor-control-lab/internal/experiment"
+	"github.com/fabriziobonavita/motor-control-lab/internal/experiment/modifier"
 	"github.com/fabriziobonavita/motor-control-lab/internal/plotting"
 	"github.com/fabriziobonavita/motor-control-lab/internal/system/sim"
 )
@@ -21,6 +22,7 @@ var (
 	target   float64
 	duration float64
 	dt       float64
+	deadzone float64
 	outBase  string
 )
 
@@ -38,6 +40,7 @@ func newSimStepCmd() *cobra.Command {
 	cmd.Flags().Float64Var(&target, "target", 1000.0, "target velocity (RPM)")
 	cmd.Flags().Float64Var(&duration, "duration", 10.0, "simulation duration (s)")
 	cmd.Flags().Float64Var(&dt, "dt", 0.001, "simulation timestep (s)")
+	cmd.Flags().Float64Var(&deadzone, "deadzone", 0.0, "actuator deadzone threshold (V)")
 	cmd.Flags().StringVar(&outBase, "out", "runs", "base output directory")
 
 	return cmd
@@ -47,7 +50,12 @@ func runSimStep(cmd *cobra.Command, args []string) error {
 	ctrl := pid.New(kp, ki, kd)
 	plant := sim.NewDCMotor()
 
-	cfg := experiment.StepConfig{TargetRPM: target, DT: dt, Duration: duration}
+	var mod modifier.Modifier
+	if deadzone > 0 {
+		mod = modifier.Chain(&modifier.DeadzoneModifier{Threshold: deadzone})
+	}
+
+	cfg := experiment.StepConfig{TargetRPM: target, DT: dt, Duration: duration, Modifier: mod}
 	samples, wall := experiment.RunStep(plant, ctrl, cfg)
 	if len(samples) == 0 {
 		return fmt.Errorf("no samples produced")

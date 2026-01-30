@@ -19,14 +19,14 @@ func TestOutputClamping(t *testing.T) {
 			name:   "saturates high",
 			kp:     100.0, // large gain
 			target: 1.0,
-			actual: 0.0, // error = 1.0
+			actual: 0.0,  // error = 1.0
 			want:   24.0, // OutMax
 		},
 		{
 			name:   "saturates low",
 			kp:     100.0,
 			target: 0.0,
-			actual: 1.0, // error = -1.0
+			actual: 1.0,   // error = -1.0
 			want:   -24.0, // OutMin
 		},
 		{
@@ -206,4 +206,3 @@ func TestTraceFieldsAreConsistent(t *testing.T) {
 		t.Errorf("Actual = %v, want %v", tr.Actual, actual)
 	}
 }
-
