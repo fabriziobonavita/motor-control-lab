@@ -24,6 +24,7 @@
 # ======================
 # Experiment run outputs
 /runs/
+/artifacts/
 
 # ======================
 # IDEs / Editors

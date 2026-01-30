@@ -27,12 +27,19 @@ This repository is designed to grow into a practical toolkit for tuning toy trai
 
 ## Install / Build
 
-Requirements: Go 1.21+ recommended.
+Requirements: Go 1.22+ (see `go.mod`).
 
-Build:
+### Quick build
 
 ```bash
 go build -o bin/mcl ./cmd/mcl
+```
+
+### Using Make
+
+```bash
+make build        # Build binary
+make help         # Show all available targets
 ```
 
 Run help:
@@ -140,6 +147,71 @@ internal/artifacts/     Run directories and file outputs
 internal/plotting/      Plot generation
 runs/                   Generated run artifacts (gitignored)
 ```
+
+## Development
+
+The project includes a Makefile with common development tasks:
+
+```bash
+make help          # Show all available targets
+make fmt           # Format Go code
+make lint          # Run linters (golangci-lint or go vet)
+make test          # Run all tests
+make build         # Build the binary
+make clean         # Clean build artifacts
+make ci            # Run CI checks (fmt + test + build)
+```
+
+### Project-specific targets
+
+```bash
+make sim-step      # Run a step response simulation with default parameters
+                   # (outputs to ./artifacts/)
+
+make plot-latest   # Show path to latest run artifacts
+```
+
+The `sim-step` target runs a simulation with sensible defaults and writes artifacts to `./artifacts/` (instead of the default `runs/` directory).
+
+## Releases
+
+Releases are created automatically when a git tag is pushed.
+
+### Creating a release
+
+1. **Tag the release:**
+   ```bash
+   git tag v1.0.0
+   git push origin v1.0.0
+   ```
+
+2. **GitHub Actions will automatically:**
+   - Build binaries for:
+     - Linux (amd64)
+     - macOS (amd64, arm64)
+     - Windows (amd64)
+   - Generate SHA256 checksums
+   - Create a GitHub Release with attached binaries
+
+### Tag format
+
+Use semantic versioning: `vX.Y.Z` (e.g., `v1.0.0`, `v0.2.1`).
+
+### Local release build
+
+To build release binaries locally (for testing):
+
+```bash
+make release
+```
+
+This will:
+- Check git state is clean
+- Read version from current git tag
+- Build binaries for all platforms into `dist/`
+- Generate `SHA256SUMS` file
+
+**Note:** The `make release` target requires a git tag on the current commit. For actual releases, push the tag and let GitHub Actions handle the build and release creation.
 
 ## Roadmap
 

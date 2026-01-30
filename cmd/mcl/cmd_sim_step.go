@@ -68,6 +68,7 @@ func runSimStep(cmd *cobra.Command, args []string) error {
 		"target_rpm": target,
 		"duration_s": duration,
 		"dt_s":       dt,
+		"deadzone_v": deadzone,
 	}
 
 	run, md, err := artifacts.Create(outBase, "sim", "dc-motor", "step", params)
