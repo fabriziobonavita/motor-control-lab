@@ -63,6 +63,18 @@ Run a step response simulation:
   --deadzone 0.0
 ```
 
+Test disturbance rejection by injecting a load disturbance:
+
+```bash
+./bin/mcl sim step \
+  --target 1000 \
+  --duration 10 \
+  --disturbance-enabled \
+  --disturbance-start 5.0 \
+  --disturbance-duration 2.0 \
+  --disturbance-magnitude 50.0
+```
+
 Artifacts are written to `--out` (default: `runs`). A run directory looks like:
 
 ```
@@ -96,7 +108,11 @@ Flags:
 - `--target` target velocity in RPM (default: `1000`)
 - `--duration` simulation duration in seconds (default: `10`)
 - `--dt` simulation timestep in seconds (default: `0.001`)
-- `--deadzone` add a deadzone to the system (default: `0.0`)
+- `--deadzone` actuator deadzone threshold in volts (default: `0.0`)
+- `--disturbance-enabled` enable load disturbance injection (default: `false`)
+- `--disturbance-start` disturbance start time in seconds (default: `5.0`)
+- `--disturbance-duration` disturbance duration in seconds, 0 means infinite (default: `2.0`)
+- `--disturbance-magnitude` disturbance magnitude in RPM/s (default: `50.0`)
 - `--out` base output directory (default: `runs`)
 
 ## Simulation model (current)
@@ -111,14 +127,36 @@ This is a baseline model used to validate the experiment harness and controller 
 
 Non idealities that can be simulated
 
-- deadzone adding a threshold that won't lead to changes
+- **Deadzone**: Actuator deadzone threshold that prevents small commands from affecting the system
+- **Load disturbances**: Step load disturbances can be injected to test PID disturbance rejection. The disturbance is modeled as RPM/s deceleration applied to the plant dynamics. Use `--disturbance-enabled` to enable, and configure timing and magnitude with the `--disturbance-*` flags.
+
+### Disturbance injection
+
+Load disturbances can be injected to test controller disturbance rejection. The disturbance is applied as a step function:
+
+- **Model**: External load disturbance `d(t)` modeled as RPM/s deceleration in the plant dynamics:
+  ```
+  dv/dt = (1/tau) * (K*V - v) - d(t)
+  ```
+- **Configuration**: Use `--disturbance-enabled` along with timing and magnitude flags
+- **Example**: Test disturbance rejection with a 50 RPM/s load starting at 5 seconds for 2 seconds:
+  ```bash
+  ./bin/mcl sim step \
+    --target 1000 \
+    --duration 10 \
+    --disturbance-enabled \
+    --disturbance-start 5.0 \
+    --disturbance-duration 2.0 \
+    --disturbance-magnitude 50.0
+  ```
+- **Logging**: Disturbance values are recorded in `samples.csv` under the `disturbance_rpm_per_s` column
 
 ### Known limitations
 
 Real systems have effects not yet modeled here (intentionally staged):
 
 - static friction
-- load torque disturbances (terrain, slope, payload)
+- continuous or time-varying load torque (only step disturbances are supported)
 - supply sag (battery voltage drop under load)
 - encoder quantization and noise
 - drivetrain backlash or slip
@@ -216,7 +254,8 @@ This will:
 ## Roadmap
 
 Near-term:
-- Add simulation non-idealities (disturbances, sensor quantization)
+- Additional disturbance shapes (ramp, sinusoidal, custom profiles)
+- Sensor quantization and noise
 - Batch runs / parameter sweeps
 - Baseline autotune (constrained search over gains using metrics)
 
