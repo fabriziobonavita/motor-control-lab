@@ -34,10 +34,18 @@ type Sample struct {
 	OutRaw     float64
 	Saturated  bool
 	Integrated bool
+
+	// Signals contains additional numeric signals exposed by the system (e.g., disturbance_rpm_per_s).
+	// The map is nil or empty when no signals are available.
+	// Keys are stable snake_case identifiers suitable for CSV headers.
+	Signals map[string]float64
 }
 
 // RunStep executes the closed-loop experiment and returns the full time series.
 // The returned wall time is useful for profiling (sim should be much faster than realtime).
+//
+// RunStep is a clean generic harness: Observe -> ctrl.Step -> Modifier -> Actuate -> Step -> record sample.
+// It optionally queries system capabilities for logging purposes but does not apply or schedule any physics.
 func RunStep(sys system.System, ctrl *pid.Controller, cfg StepConfig) ([]Sample, time.Duration) {
 	start := time.Now()
 
@@ -47,6 +55,12 @@ func RunStep(sys system.System, ctrl *pid.Controller, cfg StepConfig) ([]Sample,
 
 	steps := int(cfg.Duration / cfg.DT)
 	out := make([]Sample, 0, steps)
+
+	// Optionally query system capabilities for logging (generic, no semantic knowledge)
+	var signalReporter system.SignalReporter
+	if sr, ok := sys.(system.SignalReporter); ok {
+		signalReporter = sr
+	}
 
 	for i := 0; i < steps; i++ {
 		t := float64(i) * cfg.DT
@@ -62,6 +76,19 @@ func RunStep(sys system.System, ctrl *pid.Controller, cfg StepConfig) ([]Sample,
 		sys.Actuate(u)
 		sys.Step(cfg.DT)
 
+		// Query signals if system exposes them (for logging only)
+		var sigs map[string]float64
+		if signalReporter != nil {
+			raw := signalReporter.Signals()
+			if len(raw) > 0 {
+				// Copy the map to avoid mutation affecting stored samples
+				sigs = make(map[string]float64, len(raw))
+				for k, v := range raw {
+					sigs[k] = v
+				}
+			}
+		}
+
 		out = append(out, Sample{
 			T:          t,
 			DT:         cfg.DT,
@@ -75,6 +102,7 @@ func RunStep(sys system.System, ctrl *pid.Controller, cfg StepConfig) ([]Sample,
 			OutRaw:     tr.OutRaw,
 			Saturated:  tr.Saturated,
 			Integrated: tr.Integrated,
+			Signals:    sigs,
 		})
 	}
 
